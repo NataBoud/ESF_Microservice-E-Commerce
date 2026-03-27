@@ -31,6 +31,7 @@ public class CommonDataController {
     @Autowired
     LoadFakeDataService loadFakeDataService;
 
+    @javax.annotation.PostConstruct     
     public void fillWithTestData() {
         if (Objects.equals(environment.getProperty("ACTIVE_PROFILE"), "dev")) {
             loadFakeDataService.loadTestData();

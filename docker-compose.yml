@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_DATABASE: ecommerce_app_database
+      MYSQL_USER: mysqluser
+      MYSQL_PASSWORD: mypass
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+
+  authentication-service:
+    build: ./server/authentication-service
+    restart: always 
+    ports:
+      - "7000:7000"
+    environment:
+      - PORT=7000
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce_app_database
+      - DB_USER=mysqluser
+      - DB_PASS=mypass
+      - ACTIVE_PROFILE=dev
+    depends_on:
+      - db
+
+  common-data-service:
+    build: ./server/common-data-service
+    restart: always 
+    ports:
+      - "9000:9000"
+    environment:
+      - PORT=9000
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce_app_database
+      - DB_USER=mysqluser
+      - DB_PASS=mypass
+      - ACTIVE_PROFILE=dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=mypass
+    depends_on:
+      - db
+      - redis
+
+  payment-service:
+    build: ./server/payment-service
+    restart: always 
+    ports:
+      - "9050:9050"
+    environment:
+      - PORT=9050
+    depends_on:
+      - db
+
+  client:
+    build: ./client
+    ports:
+      - "3000:80"
+    depends_on:
+      - common-data-service
+      - authentication-service
+      - payment-service
+      # - search-suggestion-service 
